@@ -1,19 +1,19 @@
 CC=gcc
 
-all: Client DataStructures
+all: DataStructures Client
 
 clean: ClearClient ClearDataStructuresLibrary
 
 # Create server related files
 EXECUTABLE=Server.bin
+LIBRARY=DataStructures/DataStructures.a
 Client:
-	$(CC) Server/test.c Server/Server.c Server/HTTPRequest.c -o $(EXECUTABLE)
+	$(CC) Server/test.c Server/Server.c Server/Protocols/HTTPRequest.c $(LIBRARY) -o $(EXECUTABLE)
 
 ClearClient:
 	rm $(EXECUTABLE)
 
 # Creates the data structures library
-LIBRARY=DataStructures/DataStructures.a
 DataStructures: CreateDataStructures ClearDataStructures
 
 CreateDataStructures: DataStructuresSub
