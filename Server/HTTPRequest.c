@@ -1,23 +1,28 @@
 #include "HTTPRequest.h"
 #include <stdlib.h>
 #include <string.h>
+#include "../DataStructures/DataStructures.h"
 
-static const char body_marker = '|';
+#define BODY_MARKER "|"
+#define BODY_MARKER_CHAR '|'
 
-static void mark_body(char *request_string);
+static char* mark_body(char *request_string);
 static int method_select(char *method);
 
 struct HTTPRequest http_request_constructor(char *request_string)
 {
     struct HTTPRequest request;
 
-    mark_body(request_string);
+    request_string = mark_body(request_string);
+    char request_modified[sizeof(request_string)];
+    strcpy(request_modified, request_string);
+    free(request_string);
 
-    char *request_line = strtok(request_string, "\n");
-    char *header_fields = strtok(NULL, body_marker);
-    char *body = strtok(NULL, body_marker);
+    char *request_line = strtok(request_modified, "\n");
+    char *header_fields = strtok(NULL, BODY_MARKER);
+    char *body = strtok(NULL, BODY_MARKER);
 
-    char *method = strtok(request_line, " ");
+    char *method = strtok(request_modified, " ");
     char *URI = strtok(NULL, " ");
     char *HTTPVersion = strtok(NULL, " ");
     HTTPVersion = strtok(HTTPVersion, "/");
@@ -28,15 +33,20 @@ struct HTTPRequest http_request_constructor(char *request_string)
     request.HTTPVersion = (float)atof(HTTPVersion);
 }
 
-static void mark_body(char *request_string)
+static char* mark_body(char *request_string)
 {
-    for (int i = 0; i < strlen(request_string) -1; i++)
+    char *request_copy = malloc(sizeof(request_string));
+    strcpy(request_copy, request_string);
+
+    for (int i = 0; i < strlen(request_copy) -1; i++)
     {
-        if (request_string[i] == '\n' && request_string[i+1] == '\n')
+        if (request_copy[i] == '\n' && request_copy[i+1] == '\n')
         {
-            request_string[i+1] = body_marker;
+            request_copy[i+1] = BODY_MARKER_CHAR;
         }
     }
+
+    return request_copy;
 }
 
 static int method_select(char *method)
