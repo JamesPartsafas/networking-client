@@ -2,7 +2,7 @@
 #ifndef HTTPRequest_h
 #define HTTPRequest_h
 
-#include "../../DataStructures/DataStructures.h"
+#include "../../libs/DataStructures/DataStructures.h"
 
 struct HTTPRequest
 {

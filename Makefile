@@ -6,7 +6,7 @@ clean: ClearClient ClearDataStructuresLibrary
 
 # Create server related files
 EXECUTABLE=Server.bin
-LIBRARY=DataStructures/DataStructures.a
+LIBRARY=libs/DataStructures/DataStructures.a
 Client:
 	$(CC) Server/main.c Server/Server.c Server/Protocols/HTTPRequest.c Server/Nodes/HTTPServer.c $(LIBRARY) -o $(EXECUTABLE)
 
@@ -29,19 +29,19 @@ ClearDataStructuresLibrary:
 DataStructuresSub: Node LinkedList Queue BinarySearchTree Entry Dictionary
 
 Node:
-	$(CC) -c DataStructures/Common/Node.c
+	$(CC) -c libs/DataStructures/Common/Node.c
 
 LinkedList:
-	$(CC) -c DataStructures/Lists/LinkedList.c
+	$(CC) -c libs/DataStructures/Lists/LinkedList.c
 
 Queue:
-	$(CC) -c DataStructures/Lists/Queue.c
+	$(CC) -c libs/DataStructures/Lists/Queue.c
 	
 BinarySearchTree:
-	$(CC) -c DataStructures/Trees/BinarySearchTree.c
+	$(CC) -c libs/DataStructures/Trees/BinarySearchTree.c
 
 Entry:
-	$(CC) -c DataStructures/Dictionary/Entry.c
+	$(CC) -c libs/DataStructures/Dictionary/Entry.c
 
 Dictionary:
-	$(CC) -c DataStructures/Dictionary/Dictionary.c
+	$(CC) -c libs/DataStructures/Dictionary/Dictionary.c

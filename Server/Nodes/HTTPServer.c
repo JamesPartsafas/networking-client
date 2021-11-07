@@ -6,8 +6,6 @@
 #include <stdlib.h>
 
 #define BUFFER_LENGTH 30000
-#define RESPONSE_HEADERS_HTML "HTTP/1.1 200 OK\nContent-Type: text/html\n\n"
-#define RESPONSE_HEADERS_CSS "HTTP/1.1 200 OK\nContent-Type: text/css\n\n"
 
 static void retrieve_page(struct HTTPRequest request, int socket);
 
@@ -39,7 +37,7 @@ static void retrieve_page(struct HTTPRequest request, int socket)
 
     char cwd[200];
     getcwd(cwd, sizeof(cwd));
-    strcat(cwd, "/Server/public");
+    strcat(cwd, "/public");
 
     strcpy(path, cwd);
     int stylesheet = 0;
