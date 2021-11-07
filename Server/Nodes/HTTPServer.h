@@ -36,6 +36,12 @@ enum HTTPMethods
     TRACE
 };
 
+enum HTTPResponseType
+{
+    HTML,
+    CSS
+};
+
 struct HTTPServer http_server_constructor(void);
 void launch(struct Server *server);
 
