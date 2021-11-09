@@ -1,0 +1,1 @@
+document.write("I am writing from JavaScript")

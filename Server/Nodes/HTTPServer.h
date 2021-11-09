@@ -39,7 +39,9 @@ enum HTTPMethods
 enum HTTPResponseType
 {
     HTML,
-    CSS
+    CSS,
+    JS,
+    PNG
 };
 
 struct HTTPServer http_server_constructor(void);
