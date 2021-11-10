@@ -5,11 +5,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 #define BUFFER_LENGTH 30000
-#define NOT_FOUND "/notfound.html"
+#define THREAD_COUNT 2
+#define NOT_FOUND "/html/notfound.html"
 #define ADD_FILE_TO_PATH() strcat(path, url);
 
+pthread_t tid[THREAD_COUNT];
+pthread_mutex_t lock;
+
+static void* monitor_input(void *passed_server);
 static void retrieve_page(struct HTTPRequest request, int socket);
 static char * get_file_path(char *path, char *url, char *cwd, enum HTTPResponseType *response_type);
 static char * read_file_into_buffer(char *path, char *cwd, enum HTTPResponseType *response_type);
@@ -18,23 +24,56 @@ static void write_response(char *buffer, int socket, enum HTTPResponseType respo
 
 void launch(struct Server *server)
 {
+    if (pthread_mutex_init(&lock, NULL) != 0)
+    {
+        printf("\nFailed to initialize mutex\n");
+        return;
+    }
+
+    int i = 0;
+    int err;
+    for (i; i < THREAD_COUNT; i++)
+    {
+        err = pthread_create(&(tid[i]), NULL, monitor_input, (void *)server);
+        if (err != 0)
+        {
+            printf("\ncan't create thread :[%s]", strerror(err));
+        }
+    }
+
+    i = 0;
+    for (i; i < THREAD_COUNT; i++)
+    {
+        pthread_join(tid[i], NULL);
+    }
+
+    pthread_mutex_destroy(&lock);
+}
+
+static void* monitor_input(void *passed_server)
+{
+    struct Server *server = (struct Server *)passed_server;
     unsigned long long int request_number = 1;
     int addrlen = sizeof(server->address);
     long valread;
     while (1)
     {
         printf("=== AWAITING %llu ===\n", request_number);
+
+        pthread_mutex_lock(&lock);
+        printf("In mutex\n");
         int new_socket = accept(server->socket, (struct sockaddr *)&server->address, (socklen_t *)&addrlen);
         char buffer[BUFFER_LENGTH];
         valread = read(new_socket, buffer, BUFFER_LENGTH);
+        request_number++;
+        pthread_mutex_unlock(&lock);
+        printf("Out of mutex\n");
 
         struct HTTPRequest request = http_request_constructor(buffer);
-
+        
         retrieve_page(request, new_socket);
         
         close(new_socket);
-
-        request_number++;
     }
 }
 
@@ -69,39 +108,33 @@ static char * get_file_path(char *path, char *url, char *cwd, enum HTTPResponseT
     strcpy(path, cwd);
 
     char *folder = strtok(url_copy, "/");
-    char *filename = strtok(NULL, "/");
+    //char *filename = strtok(NULL, "/");
     if (folder == NULL)
     {
         strcat(path, NOT_FOUND);
-        printf("in null %s", path);
     }
     else if (strcmp(folder, "html") == 0)
     {
         ADD_FILE_TO_PATH()
-        printf("in html %s", path);
     }
     else if (strcmp(folder, "styles") == 0)
     {
         ADD_FILE_TO_PATH()
         *response_type = CSS;
-        printf("in css %s", path);
     }
     else if (strcmp(folder, "js") == 0)
     {
         ADD_FILE_TO_PATH()
         *response_type = JS;
-        printf("in js %s", path);
     }
     else if (strcmp(folder, "images") == 0)
     {
         ADD_FILE_TO_PATH()
         *response_type = PNG;
-        printf("in png %s", path);
     }
     else
     {
         strcat(path, NOT_FOUND);
-        printf("in not found %s", path);
     }
 
     return path;
@@ -110,13 +143,13 @@ static char * get_file_path(char *path, char *url, char *cwd, enum HTTPResponseT
 static char * read_file_into_buffer(char *path, char *cwd, enum HTTPResponseType *response_type)
 {
     FILE *file;
-
-    //Check if file exists
-    if (access(path, F_OK) == 0)
+    bool file_exists = (access(path, F_OK) == 0);
+    
+    if (file_exists)
     {
         file = fopen(path, "r");
     }
-    else 
+    if (!file_exists || file == NULL)
     {
         strcat(cwd, NOT_FOUND);
         *response_type = HTML;

@@ -8,7 +8,7 @@ clean: ClearClient ClearDataStructuresLibrary
 EXECUTABLE=Server.bin
 LIBRARY=libs/DataStructures/DataStructures.a
 Client:
-	$(CC) Server/main.c Server/Server.c Server/Protocols/HTTPRequest.c Server/Nodes/HTTPServer.c $(LIBRARY) -o $(EXECUTABLE)
+	$(CC) Server/main.c Server/Server.c Server/Protocols/HTTPRequest.c Server/Nodes/HTTPServer.c $(LIBRARY) -pthread -o $(EXECUTABLE)
 
 ClearClient:
 	rm $(EXECUTABLE)
