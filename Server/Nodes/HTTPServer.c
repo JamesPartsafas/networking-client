@@ -61,13 +61,11 @@ static void* monitor_input(void *passed_server)
         printf("=== AWAITING %llu ===\n", request_number);
 
         pthread_mutex_lock(&lock);
-        printf("In mutex\n");
         int new_socket = accept(server->socket, (struct sockaddr *)&server->address, (socklen_t *)&addrlen);
         char buffer[BUFFER_LENGTH];
         valread = read(new_socket, buffer, BUFFER_LENGTH);
         request_number++;
         pthread_mutex_unlock(&lock);
-        printf("Out of mutex\n");
 
         struct HTTPRequest request = http_request_constructor(buffer);
         
