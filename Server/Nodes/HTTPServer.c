@@ -14,6 +14,7 @@
 
 pthread_t tid[THREAD_COUNT];
 pthread_mutex_t lock;
+unsigned long long int request_number = 1;
 
 static void* monitor_input(void *passed_server);
 static void retrieve_page(struct HTTPRequest request, int socket);
@@ -53,7 +54,6 @@ void launch(struct Server *server)
 static void* monitor_input(void *passed_server)
 {
     struct Server *server = (struct Server *)passed_server;
-    unsigned long long int request_number = 1;
     int addrlen = sizeof(server->address);
     long valread;
     while (1)
@@ -106,7 +106,6 @@ static char * get_file_path(char *path, char *url, char *cwd, enum HTTPResponseT
     strcpy(path, cwd);
 
     char *folder = strtok(url_copy, "/");
-    //char *filename = strtok(NULL, "/");
     if (folder == NULL)
     {
         strcat(path, NOT_FOUND);
@@ -142,10 +141,17 @@ static char * read_file_into_buffer(char *path, char *cwd, enum HTTPResponseType
 {
     FILE *file;
     bool file_exists = (access(path, F_OK) == 0);
-    
+
     if (file_exists)
     {
-        file = fopen(path, "r");
+        if (*response_type == PNG)
+        {
+            file = fopen(path, "rb");
+        }
+        else 
+        {
+            file = fopen(path, "r");
+        }
     }
     if (!file_exists || file == NULL)
     {
@@ -176,14 +182,15 @@ static void write_response(char *buffer, int socket, enum HTTPResponseType respo
     {
         strcpy(response, RESPONSE_HEADERS_JS);
     }
-    else if (response_type == PNG)
+    else if (response_type == CSS)
+    {
+        strcpy(response, RESPONSE_HEADERS_CSS);
+    }
+    else 
     {
         strcpy(response, RESPONSE_HEADERS_PNG);
     }
-    else {
-        strcpy(response, RESPONSE_HEADERS_CSS);
-    }
     strcat(response, buffer);
 
-    write(socket, response, strlen(response));
+    write(socket, response, sizeof(response));
 }
