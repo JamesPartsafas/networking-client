@@ -41,7 +41,8 @@ enum HTTPResponseType
     HTML,
     CSS,
     JS,
-    PNG
+    PNG,
+    PHP
 };
 
 struct HTTPServer http_server_constructor(void);

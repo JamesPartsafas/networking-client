@@ -19,6 +19,7 @@ unsigned long long int request_number = 1;
 static void* monitor_input(void *passed_server);
 static void retrieve_page(struct HTTPRequest request, int socket);
 static char * get_file_path(char *path, char *url, char *cwd, enum HTTPResponseType *response_type);
+static char * execute_php(char *path, char *cwd, enum HTTPResponseType *response_type);
 static char * read_file_into_buffer(char *path, char *cwd, enum HTTPResponseType *response_type);
 static void write_response(char *buffer, int socket, enum HTTPResponseType response_type);
 
@@ -91,7 +92,15 @@ static void retrieve_page(struct HTTPRequest request, int socket)
     get_file_path(path, url, cwd, &response_type);
 
     //Read requested file and write response
-    char *buffer = read_file_into_buffer(path, cwd, &response_type);
+    char *buffer;
+    if (response_type == PHP)
+    {
+        buffer = execute_php(path, cwd, &response_type);
+    }
+    else 
+    {
+        buffer = read_file_into_buffer(path, cwd, &response_type);
+    }
 
     write_response(buffer, socket, response_type);
 
@@ -129,12 +138,56 @@ static char * get_file_path(char *path, char *url, char *cwd, enum HTTPResponseT
         ADD_FILE_TO_PATH()
         *response_type = PNG;
     }
+    else if (strcmp(folder, "php") == 0)
+    {
+        ADD_FILE_TO_PATH()
+        *response_type = PHP;
+    }
     else
     {
         strcat(path, NOT_FOUND);
     }
 
     return path;
+}
+
+static char * execute_php(char *path, char *cwd, enum HTTPResponseType *response_type)
+{
+    bool file_exists = (access(path, F_OK) == 0);
+    if (!file_exists)
+    {
+        return read_file_into_buffer(path, cwd, response_type);
+    }
+
+    *response_type == HTML;
+
+    char cmd[512] = {0};
+    strcat(cmd, "sh Server/Nodes/RunPHP.sh ");
+    strcat(cmd, path);
+
+    char *buffer = malloc(0);
+    FILE *fp = popen(cmd, "r");
+    if (fp == NULL)
+    {
+        return read_file_into_buffer(path, cwd, response_type);
+    }
+
+    int length = 1024;
+    char str[length];
+    while (fgets(str, length, fp) != NULL)
+    {
+        buffer = realloc(buffer, sizeof(buffer) + sizeof(str));
+        if (buffer == NULL)
+        {
+            free(buffer);
+            return read_file_into_buffer(path, cwd, response_type);
+        }
+        strcat(buffer, str);
+    }
+
+    fclose(fp);
+
+    return buffer;
 }
 
 static char * read_file_into_buffer(char *path, char *cwd, enum HTTPResponseType *response_type)
@@ -165,6 +218,10 @@ static char * read_file_into_buffer(char *path, char *cwd, enum HTTPResponseType
     fseek(file, 0, SEEK_SET);
 
     char *buffer = malloc(file_size + sizeof(char));
+    int size = sizeof(buffer)/sizeof(char);
+    for (int i = 0; i < size; i++) {
+        buffer[i] = '0';
+    }
     fread(buffer, 1, file_size, file);
     fclose(file);
 
@@ -185,6 +242,10 @@ static void write_response(char *buffer, int socket, enum HTTPResponseType respo
     else if (response_type == CSS)
     {
         strcpy(response, RESPONSE_HEADERS_CSS);
+    }
+    else if (response_type == PHP)
+    {
+        strcpy(response, RESPONSE_HEADERS_HTML);
     }
     else 
     {
