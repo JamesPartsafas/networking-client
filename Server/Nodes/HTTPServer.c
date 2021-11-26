@@ -19,7 +19,7 @@ unsigned long long int request_number = 1;
 static void* monitor_input(void *passed_server);
 static void retrieve_page(struct HTTPRequest request, int socket);
 static char * get_file_path(char *path, char *url, char *cwd, enum HTTPResponseType *response_type);
-static char * execute_php(char *path, char *cwd, enum HTTPResponseType *response_type);
+static char * execute_php(char *path, char *cwd, enum HTTPResponseType *response_type, char *parameters);
 static char * read_file_into_buffer(char *path, char *cwd, enum HTTPResponseType *response_type);
 static void write_response(char *buffer, int socket, enum HTTPResponseType response_type);
 
@@ -80,6 +80,9 @@ static void retrieve_page(struct HTTPRequest request, int socket)
 {
     //Parse request
     char *url = strtok(request.request_line.search(&request.request_line, "uri", sizeof("uri")), "?");
+    char *parameters = strtok(NULL, "\0");
+    printf("%s\n", url);
+
     char *vars = strtok(NULL, "\0");
 
     char cwd[200];
@@ -95,7 +98,7 @@ static void retrieve_page(struct HTTPRequest request, int socket)
     char *buffer;
     if (response_type == PHP)
     {
-        buffer = execute_php(path, cwd, &response_type);
+        buffer = execute_php(path, cwd, &response_type, parameters);
     }
     else 
     {
@@ -151,7 +154,7 @@ static char * get_file_path(char *path, char *url, char *cwd, enum HTTPResponseT
     return path;
 }
 
-static char * execute_php(char *path, char *cwd, enum HTTPResponseType *response_type)
+static char * execute_php(char *path, char *cwd, enum HTTPResponseType *response_type, char *parameters)
 {
     bool file_exists = (access(path, F_OK) == 0);
     if (!file_exists)
@@ -161,9 +164,15 @@ static char * execute_php(char *path, char *cwd, enum HTTPResponseType *response
 
     *response_type == HTML;
 
-    char cmd[512] = {0};
+    char cmd[1024] = {0};
     strcat(cmd, "sh Server/Nodes/RunPHP.sh ");
     strcat(cmd, path);
+    if (parameters != NULL)
+    {
+        strcat(cmd, "\"");
+        strcat(cmd, parameters);
+        strcat(cmd, "\"");
+    }
 
     char *buffer = malloc(0);
     FILE *fp = popen(cmd, "r");
